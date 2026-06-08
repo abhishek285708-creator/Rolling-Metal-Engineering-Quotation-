@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Rolling Metal Engineering - Quotation Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f2f5; color: #333; line-height: 1.5; padding-bottom: 80px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 12px; }
+        .header { background: #1a1a2e; color: #fff; padding: 18px 16px; border-radius: 12px; margin-bottom: 12px; text-align: center; }
+        .header h1 { font-size: 1.3rem; margin-bottom: 4px; }
+        .header p { font-size: 0.78rem; opacity: 0.85; line-height: 1.6; }
+        .card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 1rem; color: #1a1a2e; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #e0e0e0; display: flex; align-items: center; gap: 6px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 3px; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.9rem; transition: border-color 0.2s; background: #fff; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #1a1a2e; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .row .form-group { flex: 1; min-width: 120px; }
+        .btn { background: #1a1a2e; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 6px; touch-action: manipulation; }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary { background: #6c757d; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-row .btn { flex: 1; margin-top: 0; min-width: 140px; }
+        .shutter-item { background: #f8f9fa; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+        .shutter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .shutter-header span { font-weight: 700; color: #1a1a2e; font-size: 0.9rem; }
+        .remove-btn { background: #dc3545; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .summary-row.total { font-weight: 700; font-size: 1.05rem; color: #1a1a2e; border-top: 2px solid #1a1a2e; border-bottom: none; margin-top: 6px; padding-top: 10px; }
+        .quotation-output { display: none; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .quotation-output .company-header { text-align: center; border-bottom: 3px double #1a1a2e; padding-bottom: 12px; margin-bottom: 12px; }
+        .quotation-output .company-header h1 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 4px; }
+        .quotation-output .company-header p { font-size: 0.75rem; color: #555; line-height: 1.5; }
+        .quotation-output table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.78rem; }
+        .quotation-output th, .quotation-output td { border: 1px solid #333; padding: 6px; text-align: left; }
+        .quotation-output th { background: #1a1a2e; color: #fff; }
+        .quotation-output .text-right { text-align: right; }
+        .quotation-output .terms { margin-top: 16px; font-size: 0.75rem; color: #444; }
+        .quotation-output .terms h3 { font-size: 0.85rem; margin-bottom: 4px; color: #1a1a2e; }
+        .quotation-output .terms ul { padding-left: 16px; margin-bottom: 8px; }
+        .quotation-output .terms li { margin-bottom: 2px; }
+        .quotation-output .signature { margin-top: 24px; display: flex; justify-content: space-between; }
+        .quotation-output .signature div { text-align: center; width: 45%; }
+        .quotation-output .signature .line { border-top: 1px solid #333; margin-top: 32px; padding-top: 4px; font-size: 0.75rem; }
+        .tech-specs { font-size: 0.78rem; color: #555; background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .tech-specs h4 { font-size: 0.85rem; margin-bottom: 4px; color: #1a1a2e; }
+        .tech-specs ul { padding-left: 16px; }
+        .tech-specs li { margin-bottom: 2px; }
+        .addon-group { background: #e8f4fd; border: 1.5px solid #bee5eb; border-radius: 8px; padding: 10px; margin-top: 10px; }
+        .addon-group h4 { font-size: 0.85rem; color: #0c5460; margin-bottom: 8px; }
+        .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; }
+        .checkbox-row label { margin: 0; font-weight: 500; font-size: 0.85rem; }
+        .hidden { display: none !important; }
+        .section-divider { height: 1px; background: #ddd; margin: 12px 0; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 0.85rem; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+        .gst-note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #856404; margin-bottom: 10px; }
+        .calc-display { background: #e9ecef; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #495057; margin-top: 6px; }
+        .calc-display strong { color: #1a1a2e; }
+        .note { font-size: 0.75rem; color: #888; margin-top: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>ROLLING METAL ENGINEERING</h1>
+        <p>UNIT – PLOT NO 105, SHRUSHTI SOCIETY, HUDKESHWAR – PIPLA ROAD, NAGPUR</p>
+        <p>GST: 27BONPP5114C2ZZ | ABHISHEK PACHGHARE (B.E MECHANICAL) | 9209320037</p>
+        <p>rollingmetalengineering@gmail.com</p>
+    </div>
+
+    <div class="card">
+        <h2>📋 Client Information</h2>
+        <div class="row">
+            <div class="form-group" style="flex:2;"><label>Client Name *</label><input type="text" id="clientName" placeholder="Enter client name"></div>
+            <div class="form-group" style="flex:2;"><label>Site Address</label><input type="text" id="siteAddress" placeholder="Enter site address"></div>
+        </div>
+        <div class="row">
+            <div class="form-group"><label>Contact Person</label><input type="text" id="contactPerson" placeholder="Enter contact person"></div>
+            <div class="form-group"><label>Contact Number</label><input type="tel" id="contactNumber" placeholder="Enter phone number"></div>
+        </div>
+        <div class="row">
+            <div class="form-group"><label>Quotation Date</label><input type="date" id="quotationDate"></div>
+            <div class="form-group"><label>Quotation Number</label><input type="text" id="quotationNumber" placeholder="e.g., RME/2026/001"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔧 Add Shutter / Item</h2>
+        <div class="row">
+            <div class="form-group" style="flex:2;"><label>Description *</label><input type="text" id="itemDesc" placeholder="e.g., Main Entrance Rolling Shutter"></div>
+            <div class="form-group"><label>Operation Type *</label><select id="operationType" onchange="onOpTypeChange()"><option value="manual">Manual</option><option value="gear">Gear Operated</option><option value="motor">Motorized</option></select></div>
+        </div>
+
+        <div class="row">
+            <div class="form-group"><label>Actual Width (Feet) *</label><input type="number" id="widthFt" placeholder="e.g., 10" step="1" min="0" onchange="updateCalc()"></div>
+            <div class="form-group"><label>Actual Width (Inches)</label><select id="widthIn" onchange="updateCalc()"><option value="0">0"</option><option value="0.5">0.5"</option><option value="1">1"</option><option value="1.5">1.5"</option><option value="2">2"</option><option value="2.5">2.5"</option><option value="3">3"</option><option value="3.5">3.5"</option><option value="4">4"</option><option value="4.5">4.5"</option><option value="5">5"</option><option value="5.5">5.5"</option><option value="6">6"</option><option value="6.5">6.5"</option><option value="7">7"</option><option value="7.5">7.5"</option><option value="8">8"</option><option value="8.5">8.5"</option><option value="9">9"</option><option value="9.5">9.5"</option><option value="10">10"</option><option value="10.5">10.5"</option><option value="11">11"</option><option value="11.5">11.5"</option></select></div>
+        </div>
+
+        <div class="row">
+            <div class="form-group"><label>Width Add (Inches)</label><select id="widthAddIn" onchange="updateCalc()"><option value="0">0"</option><option value="0.5" selected>0.5"</option><option value="1">1"</option><option value="1.5">1.5"</option><option value="2">2"</option><option value="2.5">2.5"</option><option value="3">3"</option><option value="3.5">3.5"</option><option value="4">4"</option><option value="4.5">4.5"</option><option value="5">5"</option><option value="5.5">5.5"</option><option value="6">6"</option></select></div>
+            <div class="form-group"><label>Width Add (Feet)</label><input type="number" id="widthAddFt" placeholder="e.g., 0" step="1" min="0" value="0" onchange="updateCalc()"></div>
+        </div>
+
+        <div class="row">
+            <div class="form-group"><label>Actual Height (Feet) *</label><input type="number" id="heightFt" placeholder="e.g., 9" step="1" min="0" onchange="updateCalc()"></div>
+            <div class="form-group"><label>Actual Height (Inches)</label><select id="heightIn" onchange="updateCalc()"><option value="0">0"</option><option value="0.5">0.5"</option><option value="1">1"</option><option value="1.5">1.5"</option><option value="2">2"</option><option value="2.5">2.5"</option><option value="3">3"</option><option value="3.5">3.5"</option><option value="4">4"</option><option value="4.5">4.5"</option><option value="5">5"</option><option value="5.5">5.5"</option><option value="6">6"</option><option value="6.5">6.5"</option><option value="7">7"</option><option value="7.5">7.5"</option><option value="8">8"</option><option value="8.5">8.5"</option><option value="9">9"</option><option value="9.5">9.5"</option><option value="10">10"</option><option value="10.5">10.5"</option><option value="11">11"</option><option value="11.5">11.5"</option></select></div>
+        </div>
+
+        <div class="row">
+            <div class="form-group"><label>Height Add (Feet)</label><select id="heightAddFt" onchange="updateCalc()"><option value="0">0'</option><option value="0.5">0.5'</option><option value="1" selected>1'</option><option value="1.5">1.5'</option><option value="2">2'</option><option value="2.5">2.5'</option><option value="3">3'</option><option value="3.5">3.5'</option><option value="4">4'</option><option value="4.5">4.5'</option><option value="5">5'</option></select></div>
+            <div class="form-group"><label>Height Add (Inches)</label><select id="heightAddIn" onchange="updateCalc()"><option value="0">0"</option><option value="0.5">0.5"</option><option value="1">1"</option><option value="1.5">1.5"</option><option value="2">2"</option><option value="2.5">2.5"</option><option value="3">3"</option><option value="3.5">3.5"</option><option value="4">4"</option><option value="4.5">4.5"</option><option value="5">5"</option><option value="5.5">5.5"</option><option value="6">6"</option></select></div>
+        </div>
+
+        <div class="calc-display" id="calcDisplay"><strong>Overall Width:</strong> — | <strong>Overall Height:</strong> — | <strong>Area:</strong> — sq.ft</div>
+
+        <div class="row">
+            <div class="form-group"><label>Rate per Sq.Ft (₹) *</label><input type="number" id="ratePerSqFt" placeholder="e.g., 165" step="1" min="0"></div>
+            <div class="form-group"><label>Quantity</label><input type="number" id="quantity" placeholder="e.g., 1" value="1" min="1"></div>
+        </div>
+
+        <div class="row">
+            <div class="form-group"><label>Cover Size</label><select id="coverSize"><option value="13">13" Manual Cover</option><option value="16">16" Gear Cover</option><option value="18">18" Motor Cover</option></select></div>
+            <div class="form-group"><label>Cover Rate per Feet (₹)</label><input type="number" id="coverRatePerFt" placeholder="e.g., 170" step="1" min="0" value="0"><div class="note">Cover amount = Overall Width (feet) x Rate per feet</div></div>
+        </div>
+
+        <div class="addon-group">
+            <h4>⚙️ Additional Charges</h4>
+            <div class="row">
+                <div class="form-group"><label>Carting Charges (₹)</label><input type="number" id="cartingCharges" placeholder="e.g., 500" step="1" min="0" value="0"></div>
+                <div class="form-group"><label>Fitting Charges per Shutter (₹)</label><input type="number" id="fittingCharges" placeholder="e.g., 800" step="1" min="0" value="0"></div>
+            </div>
+            <div class="checkbox-row"><input type="checkbox" id="includeGearBox" onchange="toggleGearBox()"><label for="includeGearBox">Include Gear Box with Shafting Arrangement</label></div>
+            <div class="row" id="gearBoxRow" style="display:none;"><div class="form-group"><label>Gear Box Rate (₹)</label><input type="number" id="gearBoxRate" placeholder="e.g., 8500" step="1" min="0" value="0"></div></div>
+            <div class="checkbox-row" id="motorCheckRow" style="display:none;"><input type="checkbox" id="includeMotor" onchange="toggleMotor()"><label for="includeMotor">Include Motor</label></div>
+            <div class="row" id="motorRow" style="display:none;">
+                <div class="form-group"><label>Motor Capacity (KG)</label><input type="number" id="motorKg" placeholder="e.g., 300" step="1" min="0"></div>
+                <div class="form-group"><label>Motor Rate (₹)</label><input type="number" id="motorRate" placeholder="e.g., 12000" step="1" min="0" value="0"></div>
+            </div>
+        </div>
+
+        <div class="tech-specs">
+            <h4>📐 Technical Specifications</h4>
+            <ul><li>80mm x 0.8mm Interlocking Slats</li><li>5.5" x 14G Bottom Rail</li><li>2.5" x 14G Manual Guides / 3" x 12G Gear Guides</li><li>13" x 16" x 12G Manual Brackets / 16" x 19" x 12G Gear Brackets</li><li>Asian Paint Anti-Corrosive Finish</li></ul>
+        </div>
+        <button class="btn" onclick="addItem()">➕ Add to Quotation</button>
+    </div>
+
+    <div class="card" id="itemsCard" style="display:none;">
+        <h2>📦 Quotation Items</h2>
+        <div id="itemsList"></div>
+        <div class="section-divider"></div>
+        <div>
+            <div class="summary-row"><span>Subtotal (Shutter Items)</span><span id="subtotalItems">₹0.00</span></div>
+            <div class="summary-row"><span>Cover Charges</span><span id="summaryCover">₹0.00</span></div>
+            <div class="summary-row"><span>Fitting Charges</span><span id="summaryFitting">₹0.00</span></div>
+            <div class="summary-row"><span>Carting Charges</span><span id="summaryCarting">₹0.00</span></div>
+            <div class="summary-row"><span>Gear Box with Shafting</span><span id="summaryGearBox">₹0.00</span></div>
+            <div class="summary-row"><span>Motor Charges</span><span id="summaryMotor">₹0.00</span></div>
+            <div class="summary-row total"><span>Grand Total</span><span id="grandTotal">₹0.00</span></div>
+        </div>
+        <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-success" onclick="generateQuotation()">📄 Preview Quotation</button>
+            <button class="btn btn-warning" onclick="generatePDF()">📥 Download PDF</button>
+            <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+        </div>
+    </div>
+
+    <div class="quotation-output" id="quotationOutput">
+        <div class="company-header">
+            <h1>ROLLING METAL ENGINEERING</h1>
+            <p><strong>UNIT – PLOT NO 105, SHRUSHTI SOCIETY, HUDKESHWAR – PIPLA ROAD, NAGPUR</strong></p>
+            <p>GSTIN: 27BONPP5114C2ZZ | Contact: ABHISHEK PACHGHARE (B.E MECHANICAL) | Mob: 9209320037</p>
+            <p>Email: rollingmetalengineering@gmail.com</p>
+        </div>
+
+        <table style="width:100%; margin-bottom:10px;">
+            <tr><td style="width:50%; vertical-align:top;"><strong>To:</strong><br><span id="outClientName"></span><br><span id="outSiteAddress"></span><br>Contact: <span id="outContactPerson"></span> | <span id="outContactNumber"></span></td>
+            <td style="width:50%; vertical-align:top; text-align:right;"><strong>Quotation No:</strong> <span id="outQuotationNumber"></span><br><strong>Date:</strong> <span id="outQuotationDate"></span><br><strong>Valid Till:</strong> <span id="outValidTill"></span></td></tr>
+        </table>
+
+        <p style="font-size:0.85rem; margin-bottom:6px;"><strong>Subject:</strong> Quotation for Supply & Installation of Rolling Shutters</p>
+        <div class="gst-note"><strong>Note:</strong> This quotation is under Composition GST scheme. GST is not separately charged as per Section 10 of CGST Act, 2017.</div>
+
+        <table><thead><tr><th style="width:5%">Sr.</th><th style="width:12%">Actual W x H</th><th style="width:12%">Overall W x H</th><th style="width:10%">Area (sq.ft)</th><th style="width:6%">Qty</th><th style="width:10%">Rate (₹/sq.ft)</th><th style="width:12%">Amount (₹)</th></tr></thead><tbody id="outItemsTable"></tbody><tfoot><tr><td colspan="6" class="text-right"><strong>Total</strong></td><td class="text-right" id="outSubtotalItems"></td></tr></tfoot></table>
+
+        <table style="margin-top:16px;"><thead><tr><th style="width:5%">Sr.</th><th style="width:30%">Cover Description</th><th style="width:15%">Cover Length (Feet)</th><th style="width:12%">Rate (₹/Feet)</th><th style="width:8%">Qty</th><th style="width:15%">Total Cost (₹)</th></tr></thead><tbody id="outCoverTable"></tbody><tfoot><tr><td colspan="5" class="text-right"><strong>Total</strong></td><td class="text-right" id="outSubtotalCover"></td></tr></tfoot></table>
+
+        <table style="margin-top:16px;"><thead><tr><th style="width:5%">Sr.</th><th style="width:40%">Description</th><th style="width:15%">Rate (₹)</th><th style="width:8%">Qty</th><th style="width:15%">Total Cost (₹)</th></tr></thead><tbody id="outFittingTable"></tbody><tfoot><tr><td colspan="4" class="text-right"><strong>Total</strong></td><td class="text-right" id="outSubtotalFitting"></td></tr></tfoot></table>
+
+        <table style="margin-top:16px;"><tfoot><tr><td colspan="4" class="text-right">Shutter + Cover + Fitting</td><td class="text-right" id="outShutterCoverFitting"></td></tr><tr><td colspan="4" class="text-right">Carting Charges</td><td class="text-right" id="outCarting"></td></tr><tr><td colspan="4" class="text-right">Gear Box with Shafting</td><td class="text-right" id="outGearBox"></td></tr><tr><td colspan="4" class="text-right">Motor Charges</td><td class="text-right" id="outMotor"></td></tr><tr><td colspan="4" class="text-right"><strong>Grand Total</strong></td><td class="text-right" id="outGrandTotal"></td></tr><tr><td colspan="5" class="text-right" style="font-style:italic; font-size:0.75rem;" id="outWords"></td></tr></tfoot></table>
+
+        <div class="terms">
+            <h3>Technical Specifications:</h3>
+            <ul><li>80mm x 0.8mm Interlocking Slats</li><li>5.5" x 14G Bottom Rail</li><li>2.5" x 14G Manual Guides / 3" x 12G Gear Guides</li><li>13" x 16" x 12G Manual Brackets / 16" x 19" x 12G Gear Brackets</li><li>13" Manual Cover / 16" Gear Cover / 18" Motor Cover</li><li>Asian Paint Anti-Corrosive Finish</li><li>High-Torque Gear Box with Shafting Arrangement (for gear/motor operated)</li></ul>
+            <h3>Terms & Conditions:</h3>
+            <ul><li>Payment Terms: 50% Advance, 40% on Delivery, 10% after Installation</li><li>Carting and Transportation included in quoted price</li><li>Client to provide scaffolding or ladders at site</li><li>This quotation is valid for 15 days from date of issue</li><li>This quotation is under Composition GST scheme as per Section 10 of CGST Act, 2017. No separate GST will be charged.</li></ul>
+            <h3>Warranty:</h3>
+            <ul><li>6-month comprehensive service warranty from installation date, covering operational adjustments</li></ul>
+        </div>
+
+        <div class="signature"><div><div class="line">Client Signature & Seal</div></div><div><div class="line">For Rolling Metal Engineering<br>Abhishek Pachghare</div></div></div>
+    </div>
+
+    <div class="card" id="printCard" style="display:none;">
+        <div class="btn-row">
+            <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
+            <button class="btn btn-warning" onclick="generatePDF()">📥 Download PDF</button>
+            <button class="btn btn-secondary" onclick="backToForm()">✏️ Back to Form</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let items = [];
+let itemCounter = 0;
+let totalCarting = 0;
+let totalFitting = 0;
+let totalCover = 0;
+let totalGearBox = 0;
+let totalMotor = 0;
+
+document.getElementById('quotationDate').valueAsDate = new Date();
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function onOpTypeChange() {
+    const op = document.getElementById('operationType').value;
+    const motorCheck = document.getElementById('motorCheckRow');
+    const cover = document.getElementById('coverSize');
+    if (op === 'motor') { motorCheck.style.display = 'flex'; cover.value = '18'; }
+    else if (op === 'gear') { motorCheck.style.display = 'none'; document.getElementById('includeMotor').checked = false; toggleMotor(); cover.value = '16'; }
+    else { motorCheck.style.display = 'none'; document.getElementById('includeMotor').checked = false; toggleMotor(); cover.value = '13'; }
+}
+
+function toggleGearBox() {
+    const checked = document.getElementById('includeGearBox').checked;
+    document.getElementById('gearBoxRow').style.display = checked ? 'flex' : 'none';
+    if (!checked) document.getElementById('gearBoxRate').value = '0';
+}
+
+function toggleMotor() {
+    const checked = document.getElementById('includeMotor').checked;
+    document.getElementById('motorRow').style.display = checked ? 'flex' : 'none';
+    if (!checked) { document.getElementById('motorKg').value = ''; document.getElementById('motorRate').value = '0'; }
+}
+
+function formatFeetInches(totalFeet) {
+    const ft = Math.floor(totalFeet);
+    const inches = Math.round((totalFeet - ft) * 12);
+    if (inches === 0) return ft + "'";
+    if (inches === 12) return (ft + 1) + "'";
+    return ft + "'" + inches + '"';
+}
+
+function updateCalc() {
+    const wFt = parseFloat(document.getElementById('widthFt').value) || 0;
+    const wIn = parseFloat(document.getElementById('widthIn').value) || 0;
+    const wAddFt = parseFloat(document.getElementById('widthAddFt').value) || 0;
+    const wAddIn = parseFloat(document.getElementById('widthAddIn').value) || 0;
+    const hFt = parseFloat(document.getElementById('heightFt').value) || 0;
+    const hIn = parseFloat(document.getElementById('heightIn').value) || 0;
+    const hAddFt = parseFloat(document.getElementById('heightAddFt').value) || 0;
+    const hAddIn = parseFloat(document.getElementById('heightAddIn').value) || 0;
+    const overallW = wFt + (wIn / 12) + wAddFt + (wAddIn / 12);
+    const overallH = hFt + (hIn / 12) + hAddFt + (hAddIn / 12);
+    const area = overallW * overallH;
+    document.getElementById('calcDisplay').innerHTML = '<strong>Overall Width:</strong> ' + formatFeetInches(overallW) + ' | <strong>Overall Height:</strong> ' + formatFeetInches(overallH) + ' | <strong>Area:</strong> ' + area.toFixed(2) + ' sq.ft';
+}
+
+function addItem() {
+    const desc = document.getElementById('itemDesc').value.trim();
+    const opType = document.getElementById('operationType').value;
+    const wFt = parseFloat(document.getElementById('widthFt').value) || 0;
+    const wIn = parseFloat(document.getElementById('widthIn').value) || 0;
+    const wAddFt = parseFloat(document.getElementById('widthAddFt').value) || 0;
+    const wAddIn = parseFloat(document.getElementById('widthAddIn').value) || 0;
+    const hFt = parseFloat(document.getElementById('heightFt').value) || 0;
+    const hIn = parseFloat(document.getElementById('heightIn').value) || 0;
+    const hAddFt = parseFloat(document.getElementById('heightAddFt').value) || 0;
+    const hAddIn = parseFloat(document.getElementById('heightAddIn').value) || 0;
+    const rate = parseFloat(document.getElementById('ratePerSqFt').value) || 0;
+    const qty = parseInt(document.getElementById('quantity').value) || 1;
+    const coverSize = document.getElementById('coverSize').value;
+    const coverRatePerFt = parseFloat(document.getElementById('coverRatePerFt').value) || 0;
+    const carting = parseFloat(document.getElementById('cartingCharges').value) || 0;
+    const fitting = parseFloat(document.getElementById('fittingCharges').value) || 0;
+    const gearBoxRate = document.getElementById('includeGearBox').checked ? (parseFloat(document.getElementById('gearBoxRate').value) || 0) : 0;
+    const motorKg = document.getElementById('includeMotor').checked ? (parseFloat(document.getElementById('motorKg').value) || 0) : 0;
+    const motorRate = document.getElementById('includeMotor').checked ? (parseFloat(document.getElementById('motorRate').value) || 0) : 0;
+
+    if (!desc || wFt <= 0 || hFt <= 0 || rate <= 0) {
+        alert('Please fill in Description, Actual Width, Actual Height, and Rate per Sq.Ft.');
+        return;
+    }
+
+    const actualW = wFt + (wIn / 12);
+    const actualH = hFt + (hIn / 12);
+    const overallW = actualW + wAddFt + (wAddIn / 12);
+    const overallH = actualH + hAddFt + (hAddIn / 12);
+    const sqFt = overallW * overallH;
+    const shutterAmount = sqFt * rate * qty;
+    const coverAmount = overallW * coverRatePerFt * qty;
+    const fittingAmount = fitting * qty;
+
+    itemCounter++;
+    items.push({
+        sr: itemCounter, desc, opType, actualW, actualH, overallW, overallH,
+        wAddFt, wAddIn, hAddFt, hAddIn,
+        actualSizeStr: formatFeetInches(actualW) + ' x ' + formatFeetInches(actualH),
+        overallSizeStr: formatFeetInches(overallW) + ' x ' + formatFeetInches(overallH),
+        sqFt: sqFt.toFixed(2), rate, qty, shutterAmount,
+        coverSize, coverRatePerFt, coverAmount,
+        fitting, fittingAmount, carting,
+        gearBoxRate, motorKg, motorRate
+    });
+
+    totalCarting += carting;
+    totalFitting += fittingAmount;
+    totalCover += coverAmount;
+    totalGearBox += gearBoxRate;
+    totalMotor += motorRate;
+
+    renderItems();
+    clearItemInputs();
+    showToast('Item added successfully!');
+}
+
+function removeItem(sr) {
+    const item = items.find(i => i.sr === sr);
+    if (item) {
+        totalCarting -= item.carting;
+        totalFitting -= item.fittingAmount;
+        totalCover -= item.coverAmount;
+        totalGearBox -= item.gearBoxRate;
+        totalMotor -= item.motorRate;
+    }
+    items = items.filter(i => i.sr !== sr);
+    renderItems();
+}
+
+function renderItems() {
+    const list = document.getElementById('itemsList');
+    const card = document.getElementById('itemsCard');
+    if (items.length === 0) { card.style.display = 'none'; list.innerHTML = ''; return; }
+    card.style.display = 'block';
+    let html = '';
+    let subtotalItems = 0;
+    items.forEach(item => {
+        subtotalItems += item.shutterAmount;
+        let addons = [];
+        if (item.coverAmount > 0) addons.push('Cover ' + item.coverSize + '": Rs ' + item.coverAmount.toLocaleString('en-IN', {maximumFractionDigits:2}));
+        if (item.fittingAmount > 0) addons.push('Fitting: Rs ' + item.fittingAmount.toLocaleString('en-IN', {maximumFractionDigits:2}));
+        if (item.carting > 0) addons.push('Carting: Rs ' + item.carting);
+        if (item.gearBoxRate > 0) addons.push('Gear Box: Rs ' + item.gearBoxRate);
+        if (item.motorRate > 0) addons.push('Motor ' + item.motorKg + 'KG: Rs ' + item.motorRate);
+        html += '<div class="shutter-item"><div class="shutter-header"><span>#' + item.sr + ' — ' + item.desc + ' (' + item.opType.toUpperCase() + ')</span><button class="remove-btn" onclick="removeItem(' + item.sr + ')">Remove</button></div><div style="font-size:0.82rem; color:#555;">Actual: ' + item.actualSizeStr + ' | Overall: ' + item.overallSizeStr + ' | Area: ' + item.sqFt + ' sq.ft | Rate: Rs ' + item.rate + '/sq.ft | Qty: ' + item.qty + '<br><strong>Shutter: Rs ' + item.shutterAmount.toLocaleString('en-IN', {maximumFractionDigits:2}) + '</strong>' + (item.coverAmount > 0 ? ' | Cover: Rs ' + item.coverAmount.toLocaleString('en-IN', {maximumFractionDigits:2}) : '') + (addons.length > 2 ? '<br><span style="color:#0c5460;">Add-ons: ' + addons.slice(2).join(' | ') + '</span>' : '') + '</div></div>';
+    });
+    list.innerHTML = html;
+    const shutterCoverFitting = subtotalItems + totalCover + totalFitting;
+    const grandTotal = shutterCoverFitting + totalCarting + totalGearBox + totalMotor;
+    document.getElementById('subtotalItems').textContent = 'Rs ' + subtotalItems.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('summaryCover').textContent = 'Rs ' + totalCover.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('summaryFitting').textContent = 'Rs ' + totalFitting.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('summaryCarting').textContent = 'Rs ' + totalCarting.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('summaryGearBox').textContent = 'Rs ' + totalGearBox.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('summaryMotor').textContent = 'Rs ' + totalMotor.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('grandTotal').textContent = 'Rs ' + grandTotal.toLocaleString('en-IN', {maximumFractionDigits:2});
+}
+
+function clearItemInputs() {
+    document.getElementById('itemDesc').value = '';
+    document.getElementById('widthFt').value = '';
+    document.getElementById('widthIn').value = '0';
+    document.getElementById('widthAddFt').value = '0';
+    document.getElementById('widthAddIn').value = '0.5';
+    document.getElementById('heightFt').value = '';
+    document.getElementById('heightIn').value = '0';
+    document.getElementById('heightAddFt').value = '1';
+    document.getElementById('heightAddIn').value = '0';
+    document.getElementById('ratePerSqFt').value = '';
+    document.getElementById('quantity').value = '1';
+    document.getElementById('coverRatePerFt').value = '0';
+    document.getElementById('cartingCharges').value = '0';
+    document.getElementById('fittingCharges').value = '0';
+    document.getElementById('includeGearBox').checked = false;
+    document.getElementById('gearBoxRate').value = '0';
+    document.getElementById('gearBoxRow').style.display = 'none';
+    document.getElementById('includeMotor').checked = false;
+    document.getElementById('motorKg').value = '';
+    document.getElementById('motorRate').value = '0';
+    document.getElementById('motorRow').style.display = 'none';
+    document.getElementById('calcDisplay').innerHTML = '<strong>Overall Width:</strong> — | <strong>Overall Height:</strong> — | <strong>Area:</strong> — sq.ft';
+    onOpTypeChange();
+}
+
+function clearAll() {
+    if (!confirm('Clear all items?')) return;
+    items = []; itemCounter = 0; totalCarting = 0; totalFitting = 0; totalCover = 0; totalGearBox = 0; totalMotor = 0;
+    renderItems();
+    document.getElementById('quotationOutput').style.display = 'none';
+    document.getElementById('printCard').style.display = 'none';
+}
+
+function fillOutput() {
+    document.getElementById('outClientName').textContent = document.getElementById('clientName').value || '—';
+    document.getElementById('outSiteAddress').textContent = document.getElementById('siteAddress').value || '—';
+    document.getElementById('outContactPerson').textContent = document.getElementById('contactPerson').value || '—';
+    document.getElementById('outContactNumber').textContent = document.getElementById('contactNumber').value || '—';
+    document.getElementById('outQuotationNumber').textContent = document.getElementById('quotationNumber').value || '—';
+    const qDate = document.getElementById('quotationDate').value;
+    document.getElementById('outQuotationDate').textContent = qDate || '—';
+    if (qDate) { const d = new Date(qDate); d.setDate(d.getDate() + 15); document.getElementById('outValidTill').textContent = d.toISOString().split('T')[0]; }
+    else { document.getElementById('outValidTill').textContent = '—'; }
+
+    let tbody = ''; let subtotalItems = 0;
+    items.forEach(item => { subtotalItems += item.shutterAmount; tbody += '<tr><td>' + item.sr + '</td><td>' + item.actualSizeStr + '</td><td>' + item.overallSizeStr + '</td><td class="text-right">' + item.sqFt + '</td><td class="text-right">' + item.qty + '</td><td class="text-right">Rs ' + item.rate + '</td><td class="text-right">Rs ' + item.shutterAmount.toLocaleString('en-IN', {maximumFractionDigits:2}) + '</td></tr>'; });
+    document.getElementById('outItemsTable').innerHTML = tbody;
+    document.getElementById('outSubtotalItems').textContent = 'Rs ' + subtotalItems.toLocaleString('en-IN', {maximumFractionDigits:2});
+
+    let coverBody = ''; let subtotalCover = 0;
+    items.forEach(item => { if (item.coverAmount > 0) { subtotalCover += item.coverAmount; coverBody += '<tr><td>' + item.sr + '</td><td>Cover ' + item.coverSize + '" for ' + item.desc + '</td><td class="text-right">' + formatFeetInches(item.overallW) + '</td><td class="text-right">Rs ' + item.coverRatePerFt + '</td><td class="text-right">' + item.qty + '</td><td class="text-right">Rs ' + item.coverAmount.toLocaleString('en-IN', {maximumFractionDigits:2}) + '</td></tr>'; } });
+    document.getElementById('outCoverTable').innerHTML = coverBody || '<tr><td colspan="6" class="text-right">—</td></tr>';
+    document.getElementById('outSubtotalCover').textContent = 'Rs ' + subtotalCover.toLocaleString('en-IN', {maximumFractionDigits:2});
+
+    let fittingBody = ''; let subtotalFitting = 0;
+    items.forEach(item => { if (item.fittingAmount > 0) { subtotalFitting += item.fittingAmount; fittingBody += '<tr><td>' + item.sr + '</td><td>Fitting Charges for ' + item.desc + '</td><td class="text-right">Rs ' + item.fitting + '</td><td class="text-right">' + item.qty + '</td><td class="text-right">Rs ' + item.fittingAmount.toLocaleString('en-IN', {maximumFractionDigits:2}) + '</td></tr>'; } });
+    document.getElementById('outFittingTable').innerHTML = fittingBody || '<tr><td colspan="5" class="text-right">—</td></tr>';
+    document.getElementById('outSubtotalFitting').textContent = 'Rs ' + subtotalFitting.toLocaleString('en-IN', {maximumFractionDigits:2});
+
+    const shutterCoverFitting = subtotalItems + subtotalCover + subtotalFitting;
+    const grandTotal = shutterCoverFitting + totalCarting + totalGearBox + totalMotor;
+    document.getElementById('outShutterCoverFitting').textContent = 'Rs ' + shutterCoverFitting.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('outCarting').textContent = 'Rs ' + totalCarting.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('outGearBox').textContent = 'Rs ' + totalGearBox.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('outMotor').textContent = 'Rs ' + totalMotor.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('outGrandTotal').textContent = 'Rs ' + grandTotal.toLocaleString('en-IN', {maximumFractionDigits:2});
+    document.getElementById('outWords').textContent = 'Amount in Words: ' + numberToWords(Math.round(grandTotal)) + ' Rupees Only';
+}
+
+function generateQuotation() {
+    if (items.length === 0) { alert('Add at least one item.'); return; }
+    fillOutput();
+    document.getElementById('quotationOutput').style.display = 'block';
+    document.getElementById('printCard').style.display = 'block';
+    window.scrollTo({ top: document.getElementById('quotationOutput').offsetTop - 20, behavior: 'smooth' });
+}
+
+function backToForm() {
+    document.getElementById('quotationOutput').style.display = 'none';
+    document.getElementById('printCard').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function generatePDF() {
+    if (items.length === 0) { alert('Add at least one item.'); return; }
+    fillOutput();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    doc.setFontSize(16); doc.setTextColor(26, 26, 46);
+    doc.text('ROLLING METAL ENGINEERING', 105, 15, { align: 'center' });
+    doc.setFontSize(8); doc.setTextColor(80, 80, 80);
+    doc.text('UNIT – PLOT NO 105, SHRUSHTI SOCIETY, HUDKESHWAR – PIPLA ROAD, NAGPUR', 105, 21, { align: 'center' });
+    doc.text('GSTIN: 27BONPP5114C2ZZ | Contact: ABHISHEK PACHGHARE (B.E MECHANICAL) | Mob: 9209320037', 105, 25, { align: 'center' });
+    doc.text('Email: rollingmetalengineering@gmail.com', 105, 29, { align: 'center' });
+    doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.5); doc.line(15, 32, 195, 32);
+
+    const clientName = document.getElementById('clientName').value || '—';
+    const siteAddr = document.getElementById('siteAddress').value || '—';
+    const contactPerson = document.getElementById('contactPerson').value || '—';
+    const contactNum = document.getElementById('contactNumber').value || '—';
+    const qNum = document.getElementById('quotationNumber').value || '—';
+    const qDate = document.getElementById('quotationDate').value || '—';
+    let validTill = '—';
+    if (document.getElementById('quotationDate').value) { const d = new Date(document.getElementById('quotationDate').value); d.setDate(d.getDate() + 15); validTill = d.toISOString().split('T')[0]; }
+
+    doc.setFontSize(9); doc.setTextColor(0, 0, 0);
+    doc.text('To:', 15, 40); doc.text(clientName, 15, 45); doc.text(siteAddr, 15, 49); doc.text('Contact: ' + contactPerson + ' | ' + contactNum, 15, 53);
+    doc.text('Quotation No: ' + qNum, 130, 40); doc.text('Date: ' + qDate, 130, 45); doc.text('Valid Till: ' + validTill, 130, 49);
+    doc.setFontSize(9); doc.text('Subject: Quotation for Supply & Installation of Rolling Shutters', 15, 60);
+
+    doc.setFillColor(255, 243, 205); doc.setDrawColor(255, 193, 7); doc.rect(15, 63, 180, 8, 'FD');
+    doc.setFontSize(8); doc.setTextColor(133, 100, 4);
+    doc.text('Note: This quotation is under Composition GST scheme. GST is not separately charged.', 17, 68);
+    doc.setTextColor(0, 0, 0);
+
+    let subtotalItems = 0;
+    const shutterBody = items.map(item => {
+        subtotalItems += item.shutterAmount;
+        return [item.sr.toString(), item.actualSizeStr, item.overallSizeStr, item.sqFt, item.qty.toString(), 'Rs ' + item.rate, 'Rs ' + item.shutterAmount.toLocaleString('en-IN', {maximumFractionDigits:2})];
+    });
+    shutterBody.push(['', '', '', '', '', 'Total', 'Rs ' + subtotalItems.toLocaleString('en-IN', {maximumFractionDigits:2})]);
+
+    doc.autoTable({ startY: 73, head: [['Sr.', 'Actual W x H', 'Overall W x H', 'Area (sq.ft)', 'Qty', 'Rate (Rs/sq.ft)', 'Amount (Rs)']], body: shutterBody, theme: 'grid', headStyles: { fillColor: [26, 26, 46], textColor: 255, fontSize: 7 }, bodyStyles: { fontSize: 7 }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 28 }, 2: { cellWidth: 28 }, 3: { cellWidth: 18 }, 4: { cellWidth: 10 }, 5: { cellWidth: 22 }, 6: { cellWidth: 28 } }, styles: { cellPadding: 2, fontSize: 7 }, didParseCell: function(data) { if (data.row.index === items.length) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [240, 240, 240]; } } });
+
+    let finalY = doc.lastAutoTable.finalY + 4;
+    let subtotalCover = 0;
+    const coverBody = [];
+    items.forEach(item => { if (item.coverAmount > 0) { subtotalCover += item.coverAmount; coverBody.push([item.sr.toString(), 'Cover ' + item.coverSize + '" for ' + item.desc, formatFeetInches(item.overallW), 'Rs ' + item.coverRatePerFt, item.qty.toString(), 'Rs ' + item.coverAmount.toLocaleString('en-IN', {maximumFractionDigits:2})]); } });
+    if (coverBody.length > 0) {
+        coverBody.push(['', '', '', '', 'Total', 'Rs ' + subtotalCover.toLocaleString('en-IN', {maximumFractionDigits:2})]);
+        doc.autoTable({ startY: finalY, head: [['Sr.', 'Description', 'Cover Length (Feet)', 'Rate (Rs/Feet)', 'Qty', 'Total Cost (Rs)']], body: coverBody, theme: 'grid', headStyles: { fillColor: [26, 26, 46], textColor: 255, fontSize: 7 }, bodyStyles: { fontSize: 7 }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 65 }, 2: { cellWidth: 25 }, 3: { cellWidth: 22 }, 4: { cellWidth: 10 }, 5: { cellWidth: 28 } }, styles: { cellPadding: 2, fontSize: 7 }, didParseCell: function(data) { if (data.row.index === coverBody.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [240, 240, 240]; } } });
+        finalY = doc.lastAutoTable.finalY + 4;
+    }
+
+    let subtotalFitting = 0;
+    const fittingBody = [];
+    items.forEach(item => { if (item.fittingAmount > 0) { subtotalFitting += item.fittingAmount; fittingBody.push([item.sr.toString(), 'Fitting Charges for ' + item.desc, 'Rs ' + item.fitting, item.qty.toString(), 'Rs ' + item.fittingAmount.toLocaleString('en-IN', {maximumFractionDigits:2})]); } });
+    if (fittingBody.length > 0) {
+        fittingBody.push(['', '', '', 'Total', 'Rs ' + subtotalFitting.toLocaleString('en-IN', {maximumFractionDigits:2})]);
+        doc.autoTable({ startY: finalY, head: [['Sr.', 'Description', 'Rate (Rs)', 'Qty', 'Total Cost (Rs)']], body: fittingBody, theme: 'grid', headStyles: { fillColor: [26, 26, 46], textColor: 255, fontSize: 7 }, bodyStyles: { fontSize: 7 }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 90 }, 2: { cellWidth: 22 }, 3: { cellWidth: 10 }, 4: { cellWidth: 28 } }, styles: { cellPadding: 2, fontSize: 7 }, didParseCell: function(data) { if (data.row.index === fittingBody.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [240, 240, 240]; } } });
+        finalY = doc.lastAutoTable.finalY + 4;
+    }
+
+    const shutterCoverFitting = subtotalItems + subtotalCover + subtotalFitting;
+    const grandTotal = shutterCoverFitting + totalCarting + totalGearBox + totalMotor;
+    const summaryBody = [
+        ['Shutter + Cover + Fitting', 'Rs ' + shutterCoverFitting.toLocaleString('en-IN', {maximumFractionDigits:2})],
+        ['Carting Charges', 'Rs ' + totalCarting.toLocaleString('en-IN', {maximumFractionDigits:2})],
+        ['Gear Box with Shafting', 'Rs ' + totalGearBox.toLocaleString('en-IN', {maximumFractionDigits:2})],
+        ['Motor Charges', 'Rs ' + totalMotor.toLocaleString('en-IN', {maximumFractionDigits:2})],
+        ['Grand Total', 'Rs ' + grandTotal.toLocaleString('en-IN', {maximumFractionDigits:2})]
+    ];
+
+    doc.autoTable({ startY: finalY, body: summaryBody, theme: 'grid', bodyStyles: { fontSize: 8 }, columnStyles: { 0: { cellWidth: 120, fontStyle: 'bold' }, 1: { cellWidth: 55, halign: 'right', fontStyle: 'bold' } }, styles: { cellPadding: 3, fontSize: 8 }, didParseCell: function(data) { if (data.row.index === 4) { data.cell.styles.fillColor = [240, 240, 240]; } } });
+
+    finalY = doc.lastAutoTable.finalY + 4;
+    doc.setFontSize(8); doc.setFont(undefined, 'italic');
+    doc.text('Amount in Words: ' + numberToWords(Math.round(grandTotal)) + ' Rupees Only', 15, finalY);
+    doc.setFont(undefined, 'normal'); finalY += 6;
+
+    doc.setFontSize(9); doc.setFont(undefined, 'bold');
+    doc.text('Technical Specifications:', 15, finalY); doc.setFont(undefined, 'normal'); finalY += 4;
+    const specs = ['• 80mm x 0.8mm Interlocking Slats', '• 5.5" x 14G Bottom Rail', '• 2.5" x 14G Manual Guides / 3" x 12G Gear Guides', '• 13" x 16" x 12G Manual Brackets / 16" x 19" x 12G Gear Brackets', '• 13" Manual Cover / 16" Gear Cover / 18" Motor Cover', '• Asian Paint Anti-Corrosive Finish', '• High-Torque Gear Box with Shafting Arrangement (for gear/motor operated)'];
+    specs.forEach(s => { doc.setFontSize(7.5); doc.text(s, 15, finalY); finalY += 3.5; });
+
+    finalY += 3; doc.setFontSize(9); doc.setFont(undefined, 'bold');
+    doc.text('Terms & Conditions:', 15, finalY); doc.setFont(undefined, 'normal'); finalY += 4;
+    const terms = ['• Payment Terms: 50% Advance, 40% on Delivery, 10% after Installation', '• Carting and Transportation included in quoted price', '• Client to provide scaffolding or ladders at site', '• This quotation is valid for 15 days from date of issue', '• This quotation is under Composition GST scheme as per Section 10 of CGST Act, 2017. No separate GST will be charged.'];
+    terms.forEach(t => { doc.setFontSize(7.5); doc.text(t, 15, finalY); finalY += 3.5; });
+
+    finalY += 2; doc.setFontSize(9); doc.setFont(undefined, 'bold');
+    doc.text('Warranty:', 15, finalY); doc.setFont(undefined, 'normal'); finalY += 4;
+    doc.setFontSize(7.5); doc.text('• 6-month comprehensive service warranty from installation date, covering operational adjustments', 15, finalY); finalY += 8;
+
+    doc.setFontSize(8); doc.text('Client Signature & Seal', 15, finalY + 12); doc.line(15, finalY + 10, 70, finalY + 10);
+    doc.text('For Rolling Metal Engineering', 130, finalY + 12, { align: 'center' }); doc.text('Abhishek Pachghare', 130, finalY + 16, { align: 'center' }); doc.line(105, finalY + 10, 155, finalY + 10);
+
+    const filename = 'RME_Quotation_' + (qNum.replace(/\//g, '_') || 'Draft') + '.pdf';
+    doc.save(filename);
+    showToast('PDF downloaded!');
+}
+
+function numberToWords(num) {
+    if (num === 0) return 'Zero';
+    const a = ['','One ','Two ','Three ','Four ','Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+    const b = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    const g = ['','Thousand','Lakh','Crore'];
+    function convert(n) {
+        if (n < 20) return a[n];
+        if (n < 100) return b[Math.floor(n/10)] + (n%10 ? ' ' + a[n%10] : '');
+        if (n < 1000) return a[Math.floor(n/100)] + 'Hundred ' + (n%100 ? 'and ' + convert(n%100) : '');
+        return '';
+    }
+    let parts = []; let i = 0;
+    while (num > 0) {
+        let part;
+        if (i === 0) { part = num % 1000; num = Math.floor(num / 1000); }
+        else { part = num % 100; num = Math.floor(num / 100); }
+        if (part > 0) { parts.unshift(convert(part) + g[i]); }
+        i++;
+    }
+    return parts.join(' ').trim();
+}
+</script>
+</body>
+</html>
